@@ -3,6 +3,10 @@ const Order = require("./Order");
 const OrderState = Object.freeze({
     WELCOMING:   Symbol("welcoming"),
     SIZE:   Symbol("size"),
+    ITEM:   Symbol("item"),
+    TYPE: Symbol("type"),
+    TOMATOES:   Symbol("tomatoes"),
+    FRIES: Symbol("fries"),
     TOPPINGS:   Symbol("toppings"),
     DRINKS:  Symbol("drinks"),
     PAYMENT: Symbol("payment")
@@ -13,39 +17,93 @@ module.exports = class ShwarmaOrder extends Order{
         super(sNumber, sUrl);
         this.stateCur = OrderState.WELCOMING;
         this.sSize = "";
+        this.sType = "";
+        this.sTomatoes = "";
+        this.sFries = "";
         this.sToppings = "";
         this.sDrinks = "";
-        this.sItem = "shawarama";
+        this.nOrder = 0;
+        this.sItem = "";
     }
     handleInput(sInput){
         let aReturn = [];
         switch(this.stateCur){
             case OrderState.WELCOMING:
-                this.stateCur = OrderState.SIZE;
-                aReturn.push("Welcome to Richard's Shawarma.");
-                aReturn.push("What size would you like?");
+                this.stateCur = OrderState.ITEM;
+                aReturn.push("Welcome to Narinderpal's Restaurant.");
+                aReturn.push("What would you like - Shwarma/Burger?");
+                aReturn.push("Price of burger is $5, shwarma is $8");
                 break;
+            case OrderState.ITEM:
+                this.sItem = sInput;
+                aReturn.push(`You have selected ${sInput}`);
+
+                if (sInput.toLowerCase() === 'burger') {
+                    this.stateCur = OrderState.TYPE
+                    this.nOrder += 5;
+                    aReturn.push("What type of burger would you like - Beef/Cheese?");
+                } else { 
+                    this.stateCur = OrderState.SIZE
+                    this.nOrder += 8;
+                    aReturn.push("What size of Shwarma would you like?");
+                }
+                break;
+              case OrderState.TYPE:
+                  this.stateCur = OrderState.TOMATOES;
+                  this.sType = sInput;
+                  aReturn.push("Would you like to add tomatoes in the burger?");
+                  break;
+              case OrderState.TOMATOES:
+                  this.stateCur = OrderState.FRIES
+                  if(sInput.toLowerCase() != "no"){
+                      this.sTomatoes = sInput;
+                  }
+                  aReturn.push("Would you like to add fries (extra charges of $4)?");
+                  break;
+              case OrderState.FRIES:
+                  this.stateCur = OrderState.DRINKS
+                  if(sInput.toLowerCase() != "no"){
+                      this.sFries = sInput;
+                      this.nOrder += 4;
+                  }
+                  aReturn.push("Which drink would you like with that (extra charges of $2)?");
+                  break;
             case OrderState.SIZE:
+              if(sInput.toLowerCase() == "small"|| sInput.toLowerCase() == "large"){
                 this.stateCur = OrderState.TOPPINGS
                 this.sSize = sInput;
                 aReturn.push("What toppings would you like?");
+              }
+              else{
+                aReturn.push("Please choose small/large size");
+              }
+                
                 break;
             case OrderState.TOPPINGS:
-                this.stateCur = OrderState.DRINKS
-                this.sToppings = sInput;
-                aReturn.push("Would you like drinks with that?");
-                break;
+                  this.stateCur = OrderState.FRIES
+                  this.sToppings = sInput;
+                  aReturn.push("Would you like to add Fries(extra charges of $4)?");
+                  break;
             case OrderState.DRINKS:
                 this.stateCur = OrderState.PAYMENT;
-                this.nOrder = 15;
+                // this.nOrder = 15;
                 if(sInput.toLowerCase() != "no"){
                     this.sDrinks = sInput;
+                    this.nOrder += 2;
                 }
                 aReturn.push("Thank-you for your order of");
                 aReturn.push(`${this.sSize} ${this.sItem} with ${this.sToppings}`);
                 if(this.sDrinks){
                     aReturn.push(this.sDrinks);
                 }
+                if(this.sTomatoes.toLowerCase() != "no"){
+                  aReturn.push("tomatoes");
+
+              }
+              if(this.sFries.toLowerCase() != "no"){
+                aReturn.push("fries");
+
+            }
                 aReturn.push(`Please pay for your order here`);
                 aReturn.push(`${this.sUrl}/payment/${this.sNumber}/`);
                 break;
@@ -67,7 +125,7 @@ module.exports = class ShwarmaOrder extends Order{
       if(sAmount != "-1"){
         this.nOrder = sAmount;
       }
-      const sClientID = process.env.SB_CLIENT_ID || 'put your client id here for testing ... Make sure that you delete it before committing'
+      const sClientID = process.env.SB_CLIENT_ID || 'AQK4idoHhoaKcY1-WI28Sd0JTzQQiJOtRwl2kVV5mjm0omfhzIiynnjwkZb-9t2O9XcH29tzh7JqM1Re'
       return(`
       <!DOCTYPE html>
   
