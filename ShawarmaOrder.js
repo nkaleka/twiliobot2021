@@ -71,18 +71,18 @@ module.exports = class ShwarmaOrder extends Order {
         }
         break;
       case OrderState.FRIES:
-        if (sInput.toLowerCase() != "no") {
+        if (sInput.toLowerCase() == "yes") {
           this.stateCur = OrderState.DRINKS;
           this.sFries = sInput;
           this.nOrder += 4;
           aReturn.push(
-            "Which drink would you like with that (extra charges of $2)?"
+            "Would you like a drink out of coke or pepsi(extra charges of $2)?"
           );
-        } else if (sInput.toLowerCase() != "yes") {
+        } else if (sInput.toLowerCase() == "no") {
           this.stateCur = OrderState.DRINKS;
           this.sFries = sInput;
           aReturn.push(
-            "Which drink would you like with that (extra charges of $2)?"
+            "Would you like a drink out of coke or pepsi(extra charges of $2)?"
           );
         } else {
           aReturn.push("Please choose yes/no for fries");
@@ -107,35 +107,80 @@ module.exports = class ShwarmaOrder extends Order {
         aReturn.push("Would you like to add Fries(extra charges of $4)?");
         break;
       case OrderState.DRINKS:
-        this.stateCur = OrderState.PAYMENT;
-        if (sInput.toLowerCase() != "no") {
+        if (
+          sInput.toLowerCase() != "no" &&
+          sInput.toLowerCase() != "coke" &&
+          sInput.toLowerCase() != "pepsi"
+        ) {
+          aReturn.push(
+            "Please choose either no or coke or pepsi as your answer"
+          );
+        } else if (sInput.toLowerCase() == "no") {
+          this.stateCur = OrderState.PAYMENT;
+          this.sDrinks = sInput;
+          aReturn.push("Thank-you for your order of");
+          if (this.sItem == "shawarma") {
+            aReturn.push(`${this.sSize} ${this.sItem} with ${this.sToppings}`);
+            if (this.sFries.toLowerCase() != "no") {
+              aReturn.push("with fries");
+            }
+          } else if (this.sItem == "burger") {
+            aReturn.push(`${this.sType} ${this.sItem}`);
+            if (this.sTomatoes.toLowerCase() != "no") {
+              aReturn.push("with tomatoes");
+            }
+            if (this.sFries.toLowerCase() != "no") {
+              aReturn.push("with fries");
+            }
+          }
+          aReturn.push(`Please pay for your order here`);
+          aReturn.push(`${this.sUrl}/payment/${this.sNumber}/`);
+        } else if (
+          sInput.toLowerCase() == "coke" ||
+          sInput.toLowerCase() == "pepsi"
+        ) {
+          this.stateCur = OrderState.PAYMENT;
           this.sDrinks = sInput;
           this.nOrder += 2;
+          aReturn.push("Thank-you for your order of");
+          if (this.sItem == "shawarma") {
+            aReturn.push(
+              `${this.sSize} ${this.sItem} with ${this.sToppings},${this.sDrinks}`
+            );
+            if (this.sFries.toLowerCase() != "no") {
+              aReturn.push("with fries");
+            }
+          } else if (this.sItem == "burger") {
+            aReturn.push(`${this.sType} ${this.sItem},${this.sDrinks}`);
+            if (this.sTomatoes.toLowerCase() != "no") {
+              aReturn.push("with tomatoes");
+            }
+            if (this.sFries.toLowerCase() != "no") {
+              aReturn.push("with fries");
+            }
+          }
+          aReturn.push(`Please pay for your order here`);
+          aReturn.push(`${this.sUrl}/payment/${this.sNumber}/`);
         }
-        aReturn.push("Thank-you for your order of");
-        aReturn.push(`${this.sSize} ${this.sItem} with ${this.sToppings}`);
-        if (this.sDrinks) {
-          aReturn.push(this.sDrinks);
-        }
-        if (this.sTomatoes.toLowerCase() != "no") {
-          aReturn.push("tomatoes");
-        }
-        if (this.sFries.toLowerCase() != "no") {
-          aReturn.push("fries");
-        }
-        aReturn.push(`Please pay for your order here`);
-        aReturn.push(`${this.sUrl}/payment/${this.sNumber}/`);
         break;
       case OrderState.PAYMENT:
-        console.log(sInput.purchase_units);
+        console.log(sInput.purchase_units[0]);
         const shipping = { ...sInput.purchase_units };
-        console.log(shipping);
+        //console.log(shipping);
 
-        console.log(sInput.purchase_units[0][shipping]);
+        //console.log(sInput.purchase_units[0][shipping]);
         this.isDone(true);
         let d = new Date();
         d.setMinutes(d.getMinutes() + 20);
         aReturn.push(`Your order will be delivered at ${d.toTimeString()}`);
+        aReturn.push(
+          `Your order will be delivered at ${sInput.purchase_units[0].shipping.address.address_line_1}
+          ${sInput.purchase_units[0].shipping.address.admin_area_2}
+          ${sInput.purchase_units[0].shipping.address.admin_area_1}
+          ${sInput.purchase_units[0].shipping.address.postal_code}
+          ${sInput.purchase_units[0].shipping.address.country_code}
+          `
+        );
         break;
     }
     return aReturn;
@@ -148,9 +193,7 @@ module.exports = class ShwarmaOrder extends Order {
     if (sAmount != "-1") {
       this.nOrder = sAmount;
     }
-    const sClientID =
-      process.env.SB_CLIENT_ID ||
-      "AQK4idoHhoaKcY1-WI28Sd0JTzQQiJOtRwl2kVV5mjm0omfhzIiynnjwkZb-9t2O9XcH29tzh7JqM1Re";
+    const sClientID = process.env.SB_CLIENT_ID || "";
     return `
       <!DOCTYPE html>
 
